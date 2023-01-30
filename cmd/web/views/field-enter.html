@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>NGS Align Starter</title>
+    <style>
+        body {
+            padding: 20px;
+        }
+
+        .center-table {
+            margin-left: auto;
+            margin-right: auto;
+            border-collapse: collapse;
+            font-size: 12px;
+        }
+
+        .left-table {
+            margin-left: 0;
+        }
+
+        td {
+            padding: 6px;
+        }
+
+        input {
+            width: 90%;
+            vertical-align: center;
+        }
+
+        label {
+            margin: 0;
+            padding: 0;
+            vertical-align: center;
+            font-weight: bold;
+            font-size: 14px;
+        }
+    </style>
+    <script>
+        let wFolderBase = ""
+        let wFilePrefix = ""
+        let wProjectRun = ""
+        let wServerAddress = ""
+        let wProjectNameChanged = false
+
+        function dataFolderChange() {
+            let idDataFolder = document.getElementById("data");
+            let folderName = idDataFolder.value
+            folderName = folderName.replace(/\\/g, '/')
+            let index = folderName.lastIndexOf("/");
+            wFolderBase = folderName.substring(index + 1);
+
+            if (!wProjectNameChanged) {
+                let idProjectName = document.getElementById("projectName")
+                idProjectName.value = wFolderBase + "_" + wFilePrefix
+            }
+        }
+
+        function fileNamePatternChange() {
+            let idPattern = document.getElementById("pattern")
+            let prefix = idPattern.value.split(/\*/)
+            wFilePrefix = prefix[0]
+
+            if (!wProjectNameChanged) {
+                let idProjectName = document.getElementById("projectName")
+                idProjectName.value = wFolderBase + "_" + wFilePrefix
+            }
+        }
+
+        function setInitialValue() {
+            getIpAddress()
+            getToday()
+            dataFolderChange()
+            fileNamePatternChange()
+        }
+
+        function getIpAddress() {
+            let idServerAddress = document.getElementById("serverAddress")
+            if (idServerAddress.value === "") {
+                wServerAddress = self.location.host.split(/:/)[0]
+                idServerAddress.value = wServerAddress
+                document.getElementById("clientFastqProcessRead").value = "mongodb//" + wServerAddress + ":27017"
+                document.getElementById("clientFastqProcessWrite").value = "mongodb//" + wServerAddress + ":27017"
+                document.getElementById("clientReportRead").value = "mongodb//" + wServerAddress + ":27017"
+                document.getElementById("clientReportWrite").value = "mongodb//" + wServerAddress + ":27017"
+            }
+        }
+
+        function getToday() {
+            const date = new Date();
+            let day = date.getDate();
+            let month = date.getMonth() + 1;
+            let year = date.getFullYear();
+            wProjectRun = `${year}${month >= 10 ? month : '0' + month}${day >= 10 ? day : '0' + day}`;
+            let idProjectRun = document.getElementById("projectRun")
+            idProjectRun.value = wProjectRun
+        }
+
+        function serverChanged() {
+            let wServerAddress = document.getElementById("serverAddress").value
+            document.getElementById("clientFastqProcessRead").value = "mongodb//" + wServerAddress + ":27017"
+            document.getElementById("clientFastqProcessWrite").value = "mongodb//" + wServerAddress + ":27017"
+            document.getElementById("clientReportRead").value = "mongodb//" + wServerAddress + ":27017"
+            document.getElementById("clientReportWrite").value = "mongodb//" + wServerAddress + ":27017"
+        }
+
+        function bowtie2Click() {
+            document.getElementById("blastn").checked = document.getElementById("bowtie2").checked === false;
+        }
+
+        function blastnClick() {
+            document.getElementById("bowtie2").checked = document.getElementById("blastn").checked === false;
+        }
+
+        function projectNameEntered() {
+            if (document.getElementById("projectName").value === "") {
+                wProjectNameChanged = false
+                let idProjectName = document.getElementById("projectName")
+                idProjectName.value = wFolderBase + "_" + wFilePrefix
+            } else {
+                wProjectNameChanged = true
+            }
+        }
+    </script>
+</head>
+<body onload="setInitialValue()" onbeforeunload="setInitialValue()">
+<div style="margin: auto; width: 90%;">
+    <h1 style="text-align: center">Execute NGS Align</h1>
+    <form action="/submit" method="post">
+        <p style="text-align: center"><input type="submit" value="Run Align"
+                                             style="margin: 24px; padding: 6px;width: 200px; background: coral"></p>
+        <table class="center-table">
+            <thead>
+            <tr>
+                <th></th>
+                <th style="width: 70%;"></th>
+            </tr>
+            </thead>
+            <tr>
+                <td><label for="email">log Email</label></td>
+                <td><input type="text" id="email" name="email" value="isseo@keyomics.co.kr"></td>
+            </tr>
+            <tr>
+                <td colspan="2"><h2 style="color: brown;">Configuration File - Apply 1st</h2></td>
+            </tr>
+            <tr>
+                <td><label for="env">env</label></td>
+                <td><input type="text" id="env" name="env" value=""></td>
+            </tr>
+
+            <tr>
+                <td colspan="2"><h2 style="color: brown;">Required</h2></td>
+            </tr>
+            <tr>
+                <td><label for="data">data folder</label></td>
+                <td><input type="text" id="data" name="data" value="" onchange="dataFolderChange()"
+                           style="background: aquamarine"></td>
+            </tr>
+            <tr>
+                <td><label for="pattern">pattern</label></td>
+                <td><input type="text" id="pattern" name="pattern" value="" onchange="fileNamePatternChange()"
+                           style="background: aquamarine"></td>
+            </tr>
+            <tr>
+                <td><label for="folderBase">folderBase</label></td>
+                <td><input type="text" id="folderBase" name="folderBase" value="~/task"></td>
+            </tr>
+            <tr>
+                <td><label for="projectName">projectName</label></td>
+                <td><input type="text" id="projectName" name="projectName" value="" onchange="projectNameEntered()">
+                </td>
+            </tr>
+            <tr>
+                <td><label for="projectRun">projectRun</label></td>
+                <td><input type="text" id="projectRun" name="projectRun" value=""></td>
+            </tr>
+            <tr>
+                <td><label for="serverAddress">serverAddress</label></td>
+                <td><input type="text" id="serverAddress" name="serverAddress" value="" onchange="serverChanged()">
+                </td>
+            </tr>
+
+            <tr>
+                <td colspan="2"><h2 style="color: brown;">System run control</h2></td>
+            </tr>
+            <tr>
+                <td>Steps</td>
+                <td>
+                    <table class="left-table">
+                        <tr>
+                            <td style="text-align: center;"><label for="s1">s1</label></td>
+                            <td style="text-align: center;"><label for="s2">s2</label></td>
+                            <td style="text-align: center;"><label for="s3">s3</label></td>
+                            <td style="text-align: center;"><label for="s4">s4</label></td>
+                            <td style="text-align: center;"><label for="s5">s5</label></td>
+                            <td style="text-align: center;"><label for="s6">s6</label></td>
+                            <td style="text-align: center;"><label for="s7">s7</label></td>
+                            <td style="text-align: center;"><label for="s8">s8</label></td>
+                            <td style="text-align: center;"><label for="s9">s9</label></td>
+                        </tr>
+                        <tr>
+                            <td style="text-align: center;"><input type="checkbox" id="s1" name="s1" value="true"
+                                                                   checked></td>
+                            <td style="text-align: center;"><input type="checkbox" id="s2" name="s2" value="true"></td>
+                            <td style="text-align: center;"><input type="checkbox" id="s3" name="s3" value="true"></td>
+                            <td style="text-align: center;"><input type="checkbox" id="s4" name="s4" value="true"
+                                                                   checked></td>
+                            <td style="text-align: center;"><input type="checkbox" id="s5" name="s5" value="true"
+                                                                   checked></td>
+                            <td style="text-align: center;"><input type="checkbox" id="s6" name="s6" value="true"
+                                                                   checked></td>
+                            <td style="text-align: center;"><input type="checkbox" id="s7" name="s7" value="true"
+                                                                   checked></td>
+                            <td style="text-align: center;"><input type="checkbox" id="s8" name="s8" value="true"></td>
+                            <td style="text-align: center;"><input type="checkbox" id="s9" name="s9" value="true"></td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+            <tr>
+                <td>Align Package</td>
+                <td style="margin-left: 0;">
+                    <table class="left-table">
+                        <tr>
+                            <td style="text-align: center;"><label for="bowtie2">Bowtie2</label></td>
+                            <td style="text-align: center;"><label for="blastn">Blastn</label></td>
+                        </tr>
+                        <tr>
+                            <td><input type="checkbox" id="bowtie2" name="bowtie2" value="true" checked
+                                       onclick="bowtie2Click()"></td>
+                            <td><input type="checkbox" id="blastn" name="blastn" value="true" onclick="blastnClick()">
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+            <tr>
+                <td>Flip Conditions</td>
+                <td style="margin-left: 0;">
+                    <table class="left-table">
+                        <tr>
+                            <td style="text-align: center;"><label for="skipStrandCheck">SkipStrandCheck</label></td>
+                            <td style="text-align: center;"><label for="splitChromosome">SplitExcelFile</label></td>
+                            <td style="text-align: center;"><label for="tumorCheck">TumorPair</label></td>
+                            <td style="text-align: center;"><label for="reportGosub">reportGosub</label></td>
+                            <td style="text-align: center;"><label for="clear">Clear</label></td>
+                        </tr>
+                        <tr>
+                            <td><input type="checkbox" id="skipStrandCheck" name="skipStrandCheck" value="true"></td>
+                            <td><input type="checkbox" id="splitChromosome" name="splitChromosome" value="true"></td>
+                            <td><input type="checkbox" id="tumorCheck" name="tumorCheck" value="true"></td>
+                            <td><input type="checkbox" id="reportGosub" name="reportGosub" value="true"></td>
+                            <td><input type="checkbox" id="clear" name="clear" value="true"></td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+            <!-- -->
+            <tr>
+                <td colspan="2"><h2 style="color: brown;">Database Access</h2></td>
+            </tr>
+            <tr>
+                <td><label for="clientFastqProcessRead">clientFastqProcessRead</label></td>
+                <td><input type="text" id="clientFastqProcessRead" name="clientFastqProcessRead"
+                           value="mongodb://localhost:27017"></td>
+            </tr>
+            <tr>
+                <td><label for="clientFastqProcessWrite">clientFastqProcessWrite</label></td>
+                <td><input type="text" id="clientFastqProcessWrite" name="clientFastqProcessWrite"
+                           value="mongodb://localhost:27017"></td>
+            </tr>
+            <tr>
+                <td><label for="clientReportRead">clientReportRead</label></td>
+                <td><input type="text" id="clientReportRead" name="clientReportRead" value="mongodb://localhost:27017">
+                </td>
+            </tr>
+            <tr>
+                <td><label for="clientReportWrite">clientReportWrite</label></td>
+                <td><input type="text" id="clientReportWrite" name="clientReportWrite"
+                           value="mongodb://localhost:27017">
+                </td>
+            </tr>
+            <!-- -->
+            <tr>
+                <td colspan="2"><h2 style="color: brown;">Basic Default Values</h2></td>
+            </tr>
+            <tr>
+                <td><label for="adaptorP7">adaptorP7</label></td>
+                <td><input type="text" id="adaptorP7" name="adaptorP7" value="GATCGGAAGAGCACACGTCTGAACTCCAGTCAC"></td>
+            </tr>
+            <tr>
+                <td><label for="consensusMinimum">consensusMinimum</label></td>
+                <td><input type="text" id="consensusMinimum" name="consensusMinimum" value=11></td>
+            </tr>
+            <tr>
+                <td><label for="cutPatternStrandMinus">cutPatternStrandMinus</label></td>
+                <td><input type="text" id="cutPatternStrandMinus" name="cutPatternStrandMinus" value="CC[AT]"></td>
+            </tr>
+            <tr>
+                <td><label for="cutPatternStrandPlus">cutPatternStrandPlus</label></td>
+                <td><input type="text" id="cutPatternStrandPlus" name="cutPatternStrandPlus" value="[AT]GG"></td>
+            </tr>
+            <tr>
+                <td><label for="fastqLinePattern">fastqLinePattern</label></td>
+                <td><input type="text" id="fastqLinePattern" name="fastqLinePattern"
+                           value="^([ATGC]{8,12})(CTGACGTGAC([TA])GACT)([ACTG]{23,})$"></td>
+            </tr>
+            <tr>
+                <td><label for="flatRatio">flatRatio</label></td>
+                <td><input type="text" id="flatRatio" name="flatRatio" value=0.55></td>
+            </tr>
+            <tr>
+                <td><label for="maximumGapLength">maximumGapLength</label></td>
+                <td><input type="text" id="maximumGapLength" name="maximumGapLength" value=151></td>
+            </tr>
+            <tr>
+                <td><label for="minimumFragmentLength">minimumFragmentLength</label></td>
+                <td><input type="text" id="minimumFragmentLength" name="minimumFragmentLength" value=5></td>
+            </tr>
+            <tr>
+                <td><label for="minimumLength">minimumLength</label></td>
+                <td><input type="text" id="minimumLength" name="minimumLength" value=21></td>
+            </tr>
+            <tr>
+                <td><label for="minimumStrandCount">minimumStrandCount</label></td>
+                <td><input type="text" id="minimumStrandCount" name="minimumStrandCount" value=2></td>
+            </tr>
+            <tr>
+                <td><label for="optimumGenomeLength">optimumGenomeLength</label></td>
+                <td><input type="text" id="optimumGenomeLength" name="optimumGenomeLength" value=512></td>
+            </tr>
+            <tr>
+                <td><label for="run">test-run recs</label></td>
+                <td><input type="text" id="run" name="run" value=0></td>
+            </tr>
+            <tr></tr>
+        </table>
+    </form>
+</div>
+</body>
+</html>
